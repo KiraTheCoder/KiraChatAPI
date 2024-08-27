@@ -5,3 +5,5 @@ export * from "@src/interfaces/userInterfaces/loginSignUp/loginSignUp"
 // user
 export * from "@src/interfaces/userInterfaces/models/userInterface"
 
+
+export * from "@src/interfaces/ChatInterfaces/singleUserInterfaces"

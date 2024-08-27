@@ -1,7 +1,7 @@
 import express from "express";
 import {
     sendSignUpOTPRoute, signUpOrloginRoute,
-    userDataRoute,imageUploadRoute
+    userDataRoute,imageUploadRoute,chatRoute
 } from "@src/routes/userRoutes"
 
 
@@ -17,6 +17,7 @@ router.use("/upload_image", imageUploadRoute)
 
 // get user Data 
 router.use("/details", userDataRoute)
+router.use("/chat", chatRoute)
 
 export { router as userRoute };
 

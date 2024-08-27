@@ -10,7 +10,6 @@ const { createAdapter, setupPrimary } = require('@socket.io/cluster-adapter');
 import { jwtVerifyToken } from "@src/services/lib/jwt/jwtTokenVerify"
 import { socketFn } from "@src/services/utils";
 
-
 export const ServerApp = (app: Application, PORT: number | string) => {
   const cpuNums: number = availableParallelism();
 
