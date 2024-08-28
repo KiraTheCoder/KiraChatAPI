@@ -1,5 +1,7 @@
 import { logger } from "@src/logger";
 import { singleUserSocket } from "@src/services/utils/socket/singleUserSocket"
+import { groupSocket } from "./groupChat"
+
 const activeUsers = {};
 
 function socketFn(io) {
@@ -29,7 +31,9 @@ function socketFn(io) {
         /////////  single user chatting /////////////
         singleUserSocket(io, socket, activeUsers, userId);
 
+
         /////////   group chatting /////////////
+        groupSocket(io, socket, activeUsers, userId);
 
 
         socket.on('disconnect', () => {

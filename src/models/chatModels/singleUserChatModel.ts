@@ -1,18 +1,18 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, Types } from "mongoose";
 import { IsingleUserChat } from "@src/interfaces";
 
 const singleUserChatSchema = new Schema<IsingleUserChat>({
     chatId: {
-        type: [String],
+        type: [{ type: Types.ObjectId, ref: 'users', required: true }],
         required: true,
         validate: {
-            validator: (v: string[]) => v.length === 2,
-            message: "chatId must be an array of exactly 2 strings."
+            validator: (v: Types.ObjectId[]) => Array.isArray(v) && v.length === 2,
+            message: "chatId must be an array of exactly 2 user IDs."
         }
     },
     messages: [
         {
-            userId: { type: String, required: true },
+            userId: { type: Types.ObjectId, ref: 'users', required: true },
             message: { type: String, required: true },
             createdAt: { type: Date, default: Date.now }
         }

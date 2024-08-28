@@ -2,7 +2,7 @@ import "module-alias/register";
 import express, { Express, NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import dotenv from "dotenv";
-import cookieParser from "cookie-parser"
+// import cookieParser from "cookie-parser"
 import cors from 'cors'
 import { configureRoutes, corsOptions } from "./config";
 import { errorLogger, errorResponder, notFound, requestIpMiddleware, requestLogger } from "./middlewares";
@@ -26,7 +26,7 @@ app.use(function (req: Request, res: Response, next: NextFunction) {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser())
+// app.use(cookieParser())
 app.use(requestIpMiddleware);
 app.use(requestLogger)
 

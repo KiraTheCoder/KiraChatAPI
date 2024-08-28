@@ -17,13 +17,12 @@ const generateToken: RequestHandler = (req: Request, res: Response, next: NextFu
 
     logger.info("generateToken ends", { __filename });
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      sameSite: "strict"
-    })
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   sameSite: "strict"
+    // })
 
-
-    res.status(StatusCodes.ACCEPTED).json({ success: true, message: "token generated successfully" })
+    res.status(StatusCodes.ACCEPTED).json({ success: true, message: "token generated successfully", data: { token } })
   } catch (error) {
     logger.error(`generateToken error ${error}`, { __filename });
     res.status(500).json({
@@ -38,8 +37,9 @@ const verifyToken: RequestHandler = (req: Request, res: Response, next: NextFunc
   try {
     logger.info("Token verification starts", { __filename });
 
-    const token = req.cookies.token
-
+    // const token = req.cookies.token
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
     if (token) {
       const decodeToken: any = jwtVerifyToken(token);
       (req as any).userId = decodeToken.userId

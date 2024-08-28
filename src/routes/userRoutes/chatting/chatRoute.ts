@@ -1,9 +1,13 @@
 import { Router } from "express";
-import { singleUserChatController } from "@src/controllers"
+import { singleUserChatGetController, groupChatGetController } from "@src/controllers"
 import { verifyToken } from "@src/middlewares";
 
 const router = Router()
-router.route("/")
-    .get(verifyToken, singleUserChatController)
+router.route("/single")
+    .get(verifyToken, singleUserChatGetController)
+    
+router.route("/group")
+    .get(verifyToken, groupChatGetController)
+
 
 export { router as chatRoute }
