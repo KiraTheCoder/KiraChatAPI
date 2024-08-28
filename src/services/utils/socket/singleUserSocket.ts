@@ -1,7 +1,7 @@
 import { logger } from "@src/logger";
 import { singleUserChatModel } from "@src/models";
 
-export function singleUserSocket(activeUsers, io, socket, userId) {
+export function singleUserSocket(io, socket, activeUsers, userId) {
 
     socket.on('sendMessage', async ({ recipientId, message }) => {
         try {

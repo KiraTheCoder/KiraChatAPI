@@ -6,7 +6,7 @@ const activeUsers = {};
 
 function socketFn(io) {
     io.on('connection', (socket) => {
-
+        
         socket.onAny((eventName,) => logger.info(`socket incoming event ${JSON.stringify(eventName)}`, { __filename }));
         socket.onAnyOutgoing((eventName,) => logger.info(`socket out going event ${JSON.stringify(eventName)}`, { __filename }));
 
