@@ -79,7 +79,7 @@ const getUserDataController: RequestHandler = async (req: Request, res: Response
   try {
     logger.info("getting user Data", { __filename })
     const userID = (req as any).userId
-    const userData = await UserModel.findById(userID).select({ "_id": 0, "__v": 0, }).lean()
+    const userData = await UserModel.findById(userID).select({ "__v": 0, }).lean()
 
     if (!userData) {
       res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "user not found" })
