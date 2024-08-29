@@ -1,29 +1,23 @@
 import { logger } from "@src/logger";
 import { singleUserSocket } from "@src/services/utils/socket/singleUserSocket";
-import { groupSocket } from "./groupChat";
-import { jwtVerifyToken } from "@src/services/lib/jwt/jwtTokenVerify";
+// import { groupSocket } from "./groupChat";
 
 const activeUsers = {};
 
 function socketFn(io) {
   io.on("connection", (socket) => {
     socket.onAny((eventName) =>
-      logger.info(`socket incoming event ${JSON.stringify(eventName)}`, {
-        __filename,
-      })
-    );
-    socket.onAnyOutgoing((eventName) =>
-      logger.info(`socket out going event ${JSON.stringify(eventName)}`, {
-        __filename,
-      })
+      logger.info(`socket incoming event ${JSON.stringify(eventName)}`, { __filename })
     );
 
-    activeUsers[(socket as any).userId] = socket.id;
+    socket.onAnyOutgoing((eventName) => logger.info(`socket out going event ${JSON.stringify(eventName)}`, { __filename, }));
 
-    logger.error("id " + (socket as any).userId);
+    const userId = (socket as any).userId
+    activeUsers[userId] = socket.id;
 
-    logger.info("Socket connected succesfully");
-    logger.info(`active users :  ${JSON.stringify(activeUsers)}`);
+
+    logger.info("Socket connected succesfully",{__filename});
+    logger.info(`active users :  ${JSON.stringify(activeUsers)}`,{__filename});
 
     //////////////
 
@@ -40,7 +34,7 @@ function socketFn(io) {
     socket.emit("my_socket_id", socket.id);
 
     /////////  single user chatting /////////////
-    // singleUserSocket(io, socket, activeUsers, userId);
+    singleUserSocket(io, socket, activeUsers, userId);
 
     /////////   group chatting /////////////
     // groupSocket(io, socket, activeUsers, userId);

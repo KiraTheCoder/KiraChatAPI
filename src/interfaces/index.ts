@@ -8,3 +8,4 @@ export * from "@src/interfaces/userInterfaces/models/userInterface"
 
 export * from "@src/interfaces/ChatInterfaces/singleUserChatInterfaces"
 export * from "@src/interfaces/ChatInterfaces/groupChatInterfaces"
+export * from "@src/interfaces/ChatInterfaces/userChatReferenceInterface"

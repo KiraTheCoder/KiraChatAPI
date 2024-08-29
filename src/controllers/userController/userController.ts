@@ -41,7 +41,7 @@ const signUpOrLoginController: RequestHandler = async (req: Request, res: Respon
 
 
 //////////////////////////
-const setImageController: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+const setUserImageController: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     logger.info(`image upload`, { __filename });
 
@@ -78,8 +78,19 @@ const setImageController: RequestHandler = async (req: Request, res: Response, n
 const getUserDataController: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     logger.info("getting user Data", { __filename })
-    const userID = (req as any).userId
-    const userData = await UserModel.findById(userID).select({ "__v": 0, }).lean()
+
+    const friendUserId = req?.body?.userId;
+    const currentUserID = (req as any).userId
+
+    // get user data based on passed userId 
+    let userData;
+    if (friendUserId) {
+      userData = await UserModel.findById(friendUserId).select({ "__v": 0, }).lean()
+    }
+    else {
+      userData = await UserModel.findById(currentUserID).select({ "__v": 0, }).lean()
+    }
+
 
     if (!userData) {
       res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "user not found" })
@@ -98,6 +109,6 @@ const getUserDataController: RequestHandler = async (req: Request, res: Response
 
 
 
-export { signUpOrLoginController, setImageController, getUserDataController };
+export { signUpOrLoginController, setUserImageController, getUserDataController };
 
 

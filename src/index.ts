@@ -7,6 +7,9 @@ import cors from 'cors'
 import { configureRoutes, corsOptions } from "./config";
 import { errorLogger, errorResponder, notFound, requestIpMiddleware, requestLogger } from "./middlewares";
 import { ServerApp, connectDatabase } from "./providers";
+import mongoose from "mongoose";
+
+
 
 dotenv.config();
 connectDatabase();
@@ -31,6 +34,10 @@ app.use(requestIpMiddleware);
 app.use(requestLogger)
 
 configureRoutes(app);
+
+// globally validator on
+mongoose.set('runValidators', true);
+
 
 app.get("/", (req: Request, res: Response) => {
   res.json({ route: "This is root route" });
