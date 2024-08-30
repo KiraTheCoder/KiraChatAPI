@@ -1,16 +1,21 @@
 import { Router } from "express";
-import { singleUserChatGetController, groupChatGetController, deleteChatHistory } from "@src/controllers"
-import { verifyToken } from "@src/middlewares";
+import {
+    singleUserChatGetController,
+    deleteChatHistory
+} from "@src/controllers"
+import { groupChatRoute } from "@src/routes/userRoutes/chatting/groupChatRoute"
+
 
 const router = Router()
-router.route("/single")
-    .get(verifyToken, singleUserChatGetController)
-
-router.route("/group")
-    .get(verifyToken, groupChatGetController)
 
 router.route("/delete_history")
-    .delete(verifyToken, deleteChatHistory)
+    .delete(deleteChatHistory)
+
+router.route("/single")
+    .get(singleUserChatGetController)
+
+// group route
+router.use("/group", groupChatRoute)
 
 
 

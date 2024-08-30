@@ -42,7 +42,7 @@ export function singleUserSocket(io, socket, activeUsers, userId) {
             }
           }
           else {
-            await userChatReferenceModel.findOneAndUpdate({ userId: myId }, { $push: { friendsIds: otherId } })
+            await userChatReferenceModel.findOneAndUpdate({ userId: myId }, { $addToSet: { friendsIds: otherId } })
           }
 
         } catch (error) {
@@ -65,7 +65,7 @@ export function singleUserSocket(io, socket, activeUsers, userId) {
             }
           }
           else {
-            await userChatReferenceModel.findOneAndUpdate({ userId: otherId }, { $push: { friendsIds: myId } })
+            await userChatReferenceModel.findOneAndUpdate({ userId: otherId }, { $addToSet: { friendsIds: myId } })
           }
 
         } catch (error) {
@@ -79,7 +79,7 @@ export function singleUserSocket(io, socket, activeUsers, userId) {
         await singleUserChatModel.findOneAndUpdate(
           { _id: singleUserChats?._id },
           {
-            $push: {
+            $addToSet: {
               messages: {
                 userId: new Types.ObjectId(userId),
                 message,

@@ -11,8 +11,11 @@ router.use("/admin", adminRoutes);
 ///////////////// user /////////////////
 router.use("/user", userRoute)
 
+export { router as AllMainRoutes };
 
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////// test 
 
 import { singleUserChatModel, userChatReferenceModel } from "@src/models"
@@ -30,5 +33,3 @@ router.route("/test/chats")
             }
         });
 
-
-export { router as AllMainRoutes };

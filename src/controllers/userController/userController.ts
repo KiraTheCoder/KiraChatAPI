@@ -61,17 +61,14 @@ const setUserImageController: RequestHandler = async (req: Request, res: Respons
       return res.status(StatusCodes.CREATED).json({ success: true, message: "image uploaded" })
     }
     else {
-      return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "image not provided" })
+      await UserModel.findByIdAndUpdate((req as any).userId, { $set: { image:null } })
+      return res.status(StatusCodes.CREATED).json({ success: true, message: "image removed" })
     }
   } catch (error) {
-    logger.error(`exception occurred at setImageController : ${JSON.stringify(error)}`, { __filename });
+    logger.error(`exception occurred at setUserImageController : ${JSON.stringify(error)}`, { __filename });
     return next(error);
   }
 };
-
-
-
-
 
 
 //////////////////////////
@@ -103,12 +100,30 @@ const getUserDataController: RequestHandler = async (req: Request, res: Response
 }
 
 
+const getAllUsersController: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    logger.info("getting users Data", { __filename })
+
+    const userData = await UserModel.find({}).select({ "__v": 0, }).lean()
+
+
+    if (!userData) {
+      res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "users not found" })
+    }
+    res.status(StatusCodes.ACCEPTED).json({ success: true, message: "users data fetched successfully", data: { users: userData } })
+  } catch (error) {
+    logger.error(`exception occurred at getAllUsersController : ${JSON.stringify(error)}`, { __filename });
+    next(error)
+  }
+}
+
+
 //////////////////////////  
 
 
 
 
 
-export { signUpOrLoginController, setUserImageController, getUserDataController };
+export { signUpOrLoginController, setUserImageController, getUserDataController, getAllUsersController };
 
 

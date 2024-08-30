@@ -3,6 +3,7 @@ import { logger } from "@src/logger";
 import { singleUserChatModel, groupChatModel, userChatReferenceModel } from "@src/models"
 import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
+import { imageValidator } from "@src/validation_schema"
 
 const { ObjectId } = Types;
 
@@ -61,39 +62,38 @@ const groupChatGetController: RequestHandler = async (req: Request, res: Respons
 }
 
 
-const deleteChatHistory: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+const deleteChatHistory: RequestHandler = async (req, res, next) => {
     try {
         logger.info("Deleting chat history...", { __filename });
 
         const currentUserId = new ObjectId((req as any).userId);
-        let { friendUserId, roomId } = req.body;
+        const { friendUserId, roomId } = req.body;
 
         if (!friendUserId && !roomId) {
             return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "Please provide friendUserId or roomId" });
         }
 
-        let result;
+
+        let updateFields: any = {};
         if (friendUserId) {
-            friendUserId = new ObjectId(friendUserId);
-            result = await userChatReferenceModel.findByIdAndUpdate(
-                currentUserId,
-                { $pull: { friendsIds: friendUserId } },
-                { new: true }
-            );
+            updateFields = { $pull: { friendsIds: new ObjectId(friendUserId) } };
         } else if (roomId) {
-            roomId = new ObjectId(roomId);
-            result = await userChatReferenceModel.findByIdAndUpdate(
-                currentUserId,
-                { $pull: { groupIds: roomId } },
-                { new: true }
-            );
+            updateFields = { $pull: { groupIds: new ObjectId(roomId) } };
         }
+
+        const result = await userChatReferenceModel.findOneAndUpdate(
+            { userId: friendUserId },
+            updateFields,
+            { new: true, runValidators: true }
+        );
 
         if (!result) {
-            return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "User (friend OR group) not found and chat history deleted" });
+            logger.info(`No userChatReferenceModel found for userId: ${currentUserId}`, { __filename });
+            return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "User (friend OR group) not found or chat history could not be deleted" });
         }
 
-        res.status(StatusCodes.ACCEPTED).json({ success: true, message: "Chat history deleted successfully" });
+        logger.info(`Chat history updated for userId: ${currentUserId}, result: ${JSON.stringify(result)}`, { __filename });
+        res.status(StatusCodes.ACCEPTED).json({ success: true, message: "Chat history deleted successfully, It's not deleted from DB" });
     } catch (error) {
         logger.error(`Exception occurred at deleteChatHistory: ${JSON.stringify(error)}`, { __filename });
         next(error);
@@ -101,10 +101,70 @@ const deleteChatHistory: RequestHandler = async (req: Request, res: Response, ne
 };
 
 
+const groupChatCreateController: RequestHandler = async (req, res, next) => {
+    try {
+        logger.info("creating group", { __filename });
+        const userId = new ObjectId((req as any).userId);
+        let { name, userIds } = req?.body;
+
+        if (!name && !userIds) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "please provide name and userIds" });
+        }
+
+        userIds = userIds.map((id) => new ObjectId(id))
+        await groupChatModel.create({
+            adminIds: [userId],
+            name: name,
+            userIds
+        })
 
 
+        res.status(StatusCodes.ACCEPTED).json({ success: true, message: "group created successfully" });
+    } catch (error) {
+        logger.error(`Exception occurred at deleteChatHistory: ${JSON.stringify(error)}`, { __filename });
+        next(error);
+    }
+};
+
+
+const setGroupImageController: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        logger.info(`image upload`, { __filename });
+        let image;
+        if (req.file) {
+            image = {
+                data: req?.file.buffer.toString("base64"),
+                contentType: req?.file.mimetype
+            }
+        }
+        if (image) {
+            await imageValidator.validateAsync(image);
+            await groupChatModel.findByIdAndUpdate((req as any).userId, { $set: { image } })
+            return res.status(StatusCodes.CREATED).json({ success: true, message: "image uploaded" })
+        }
+        else {
+            await groupChatModel.findByIdAndUpdate((req as any).userId, { $set: { image: null } })
+            return res.status(StatusCodes.CREATED).json({ success: true, message: "image removed" })
+        }
+    } catch (error) {
+        logger.error(`exception occurred at setImageController : ${JSON.stringify(error)}`, { __filename });
+        return next(error);
+    }
+};
+
+
+const getGroupChatsController: RequestHandler = async (req, res, next) => {
+    try {
+        logger.info("creating group", { __filename });
+        await groupChatModel.find({})
+        res.status(StatusCodes.ACCEPTED).json({ success: true, message: "group created successfully" });
+    } catch (error) {
+        logger.error(`Exception occurred at deleteChatHistory: ${JSON.stringify(error)}`, { __filename });
+        next(error);
+    }
+};
 //////////////////////////  
 
-export { singleUserChatGetController, groupChatGetController, deleteChatHistory };
+export { singleUserChatGetController, groupChatGetController, deleteChatHistory, groupChatCreateController, setGroupImageController, getGroupChatsController };
 
 
