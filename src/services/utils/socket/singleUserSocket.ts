@@ -5,6 +5,8 @@ const { ObjectId } = Types;
 import { timeDateFormat } from "@src/services/lib/moment"
 
 export function singleUserSocket(io, socket, activeUsers, userId) {
+
+  ////////// sendMessage event /////////////
   socket.on("sendMessage", async ({ recipientId, message }) => {
     try {
       const otherId = new ObjectId(recipientId);
@@ -98,21 +100,36 @@ export function singleUserSocket(io, socket, activeUsers, userId) {
 
 
       logger.info(`Message saved in DB --> ${userId} to ${recipientId}: ${message}`, { __filename });
+      logger.info(`activeUsers--> ${JSON.stringify(activeUsers)}`, { __filename });
 
       // Emit the message to the recipient if they are online
       const recipientSocketId = activeUsers[recipientId];
+
+      // If user online then only send messages by socket
       if (recipientSocketId) {
+        ////////// receiveMessage event /////////////
         io.to(recipientSocketId).emit("receiveMessage", {
           userId: userId,
           message: message,
           createdAt: timeDateFormat(new Date())
         });
         logger.info(
-          `Message sent from ${userId} to ${recipientId}: ${message}`
-        );
+          `Message sent from ${userId} to ${recipientId}: ${message}`,{__filename});
       }
+
+
     } catch (error) {
       logger.error(`Error during sendMessage event: ${error}`, { __filename });
     }
   });
+  //////////////////////////////
+
+  ////////// online event /////////////
+  socket.on("online", async (recipientId) => {
+    const recipientSocketId = activeUsers[recipientId];
+    const bool = recipientSocketId ? true : false
+    return bool
+  })
+
+
 }
