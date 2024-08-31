@@ -7,7 +7,7 @@ import { UserModel } from "@src/models"
 import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
 
-const { objectId } = Types
+const { ObjectId } = Types
 
 //////////////////////////
 const signUpOrLoginController: RequestHandler = async (req, res, next) => {
@@ -101,7 +101,7 @@ const getUserDataController: RequestHandler = async (req: Request, res: Response
 const getAllUsersController: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     logger.info("getting users Data", { __filename })
-    const userId = new objectId(req as any).userId
+    const userId = new ObjectId((req as any).userId)
 
     const userData = await UserModel.find({ _id: { $ne: userId } }).select({ "__v": 0, }).lean()
 
