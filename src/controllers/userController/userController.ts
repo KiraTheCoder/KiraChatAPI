@@ -5,70 +5,68 @@ import {
 import { logger } from "@src/logger";
 import { UserModel } from "@src/models"
 import { StatusCodes } from "http-status-codes";
+import { Types } from "mongoose";
 
-
+const { objectId } = Types
 
 //////////////////////////
-const signUpOrLoginController: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+const signUpOrLoginController: RequestHandler = async (req, res, next) => {
   try {
-    logger.info(`Sign-up or login process started`, { __filename });
+    logger.info("Sign-up or login process started", { __filename });
 
-    // Validate the request body
-    const { name, phoneNumber } = await signUpAndLoginValidator.validateAsync(req?.body);
+    const { name, phoneNumber } = await signUpAndLoginValidator.validateAsync(req.body);
     logger.info(`Validated details: ${JSON.stringify({ name, phoneNumber })}`, { __filename });
 
-    // Find or create user
     const user = await UserModel.findOneAndUpdate(
       { phoneNumber },
       { $set: { name } },
-      { new: true, upsert: true } // `upsert: true` creates a new document if none exist  s
+      { new: true, upsert: true }
     );
 
-    logger.info(`User processed: ${JSON.stringify(user)}`, { __filename });
-
-    // Create JWT token
-    if (user._id) {
+    if (user && user._id) {
+      logger.info(`User processed: ${JSON.stringify(user)}`, { __filename });
       (req as any).userId = user._id;
-      next()
+      return next();
     } else {
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: "User not processed" });
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: "User not processed",
+      });
     }
   } catch (error) {
     logger.error(`Exception occurred in signUpOrLoginController: ${JSON.stringify(error)}`, { __filename });
-    return next(error);
+    next(error);
   }
 };
+
 
 
 //////////////////////////
-const setUserImageController: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+const setUserImageController: RequestHandler = async (req, res, next) => {
   try {
-    logger.info(`image upload`, { __filename });
+    logger.info("Image upload started", { __filename });
 
-    let image;
-    if (req.file) {
-      image = {
-        data: req?.file.buffer.toString("base64"),
-        contentType: req?.file.mimetype
+    const image = req.file
+      ? {
+        data: req.file.buffer.toString("base64"),
+        contentType: req.file.mimetype,
       }
-    }
-
-    // logger.info(`details ${JSON.stringify(image)}`, { __filename });
+      : null;
 
     if (image) {
       await imageValidator.validateAsync(image);
-      await UserModel.findByIdAndUpdate((req as any).userId, { $set: { image } })
-      return res.status(StatusCodes.CREATED).json({ success: true, message: "image uploaded" })
     }
-    else {
-      await UserModel.findByIdAndUpdate((req as any).userId, { $set: { image:null } })
-      return res.status(StatusCodes.CREATED).json({ success: true, message: "image removed" })
-    }
+
+    await UserModel.findByIdAndUpdate((req as any).userId, { image });
+    const message = image ? "Image uploaded" : "Image removed";
+
+    return res.status(StatusCodes.CREATED).json({ success: true, message });
   } catch (error) {
-    logger.error(`exception occurred at setUserImageController : ${JSON.stringify(error)}`, { __filename });
-    return next(error);
+    logger.error(`Exception occurred in setUserImageController: ${JSON.stringify(error)}`, { __filename });
+    next(error);
   }
 };
+
 
 
 //////////////////////////
@@ -103,14 +101,14 @@ const getUserDataController: RequestHandler = async (req: Request, res: Response
 const getAllUsersController: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     logger.info("getting users Data", { __filename })
+    const userId = new objectId(req as any).userId
 
-    const userData = await UserModel.find({}).select({ "__v": 0, }).lean()
-
+    const userData = await UserModel.find({ _id: { $ne: userId } }).select({ "__v": 0, }).lean()
 
     if (!userData) {
       res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "users not found" })
     }
-    res.status(StatusCodes.ACCEPTED).json({ success: true, message: "users data fetched successfully", data: { users: userData } })
+    res.status(StatusCodes.ACCEPTED).json({ success: true, message: "users data fetched successfully", data: { users: userData, userId } })
   } catch (error) {
     logger.error(`exception occurred at getAllUsersController : ${JSON.stringify(error)}`, { __filename });
     next(error)
@@ -119,11 +117,6 @@ const getAllUsersController: RequestHandler = async (req: Request, res: Response
 
 
 //////////////////////////  
-
-
-
-
-
 export { signUpOrLoginController, setUserImageController, getUserDataController, getAllUsersController };
 
 

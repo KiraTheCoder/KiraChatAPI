@@ -14,7 +14,8 @@ const groupChatSchema = new Schema<IgroupChat>({
     ],
     name: { type: String, required: true },
     image: { data: String, contentType: String }
-
 });
+
+
 
 export const groupChatModel = model<IgroupChat>("GroupChat", groupChatSchema);

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-    groupChatCreateController, setGroupImageController, groupChatGetController,
+    createGroupChatController, setGroupImageController, getGroupChatController,
     getGroupChatsController
 } from "@src/controllers"
 import { upload } from "@src/services/lib/multer"
@@ -8,10 +8,10 @@ import { upload } from "@src/services/lib/multer"
 const router = Router()
 
 router.route("/")
-    .get(groupChatGetController)
+    .get(getGroupChatController)
 
 router.route("/create")
-    .post(groupChatCreateController)
+    .post(createGroupChatController)
 
 router.route("/upload_image")
     .post(upload.single("image"), setGroupImageController)
