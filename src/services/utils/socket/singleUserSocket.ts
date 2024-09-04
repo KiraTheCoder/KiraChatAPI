@@ -15,6 +15,7 @@ export function singleUserSocket(io, socket, activeUsers, userId) {
       let singleUserChats = await singleUserChatModel.findOne({
         chatId: { $all: [otherId, myId] }
       }).lean();
+      logger.info(`singleUserChats ${JSON.stringify(singleUserChats)}`, { __filename })
 
       if (!singleUserChats) {
         // Create a new chat with exactly 2 IDs if not found
@@ -32,6 +33,8 @@ export function singleUserSocket(io, socket, activeUsers, userId) {
         //////////////////// create current user chatsReference docs //////////////////
         try {
           const userChatRef = await userChatReferenceModel.findById(myId).lean()
+          logger.info(`userChatRef ${JSON.stringify(userChatRef)}`, { __filename })
+
           if (!userChatRef) {
             try {
               await userChatReferenceModel.create({
@@ -44,6 +47,7 @@ export function singleUserSocket(io, socket, activeUsers, userId) {
             }
           }
           else {
+            logger.info(`userChatReferenceModel added new friend`, { __filename })
             await userChatReferenceModel.findOneAndUpdate({ userId: myId }, { $addToSet: { friendsIds: otherId } })
           }
 
@@ -114,7 +118,7 @@ export function singleUserSocket(io, socket, activeUsers, userId) {
           createdAt: timeDateFormat(new Date())
         });
         logger.info(
-          `Message sent from ${userId} to ${recipientId}: ${message}`,{__filename});
+          `Message sent from ${userId} to ${recipientId}: ${message}`, { __filename });
       }
 
 

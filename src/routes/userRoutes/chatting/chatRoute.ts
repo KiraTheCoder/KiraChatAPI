@@ -1,17 +1,16 @@
 import { Router } from "express";
 import {
-    getSingleUserChatController,
     deleteChatHistory
 } from "@src/controllers"
 import { groupChatRoute } from "@src/routes/userRoutes/chatting/groupChatRoute"
+import { singleChatRoute } from "@src/routes/userRoutes/chatting/singleChatRoute"
 
 const router = Router()
 
 router.route("/delete_history")
     .delete(deleteChatHistory)
 
-router.route("/single")
-    .get(getSingleUserChatController)
+router.use("/single", singleChatRoute)
 
 // group route
 router.use("/group", groupChatRoute)

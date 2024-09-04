@@ -24,6 +24,5 @@ router.route("/all")
 router.use("/details", userDataRoute)
 router.use("/chat", verifyToken, chatRoute)
 
+
 export { router as userRoute };
-
-

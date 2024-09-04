@@ -1,6 +1,6 @@
 import { RequestHandler, NextFunction, Request, Response } from "express";
 import { logger } from "@src/logger";
-import { singleUserChatModel, groupChatModel, userChatReferenceModel } from "@src/models"
+import { singleUserChatModel, groupChatModel, userChatReferenceModel, UserModel } from "@src/models"
 import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
 import { imageValidator } from "@src/validation_schema"
@@ -12,7 +12,8 @@ const getSingleUserChatController: RequestHandler = async (req: Request, res: Re
     try {
         logger.info("getting user Chat", { __filename })
 
-        let otherUserId = req?.body?.otherUserId
+
+        let otherUserId: any = req?.query.otherUserId
         let userID = (req as any).userId
 
         if (!otherUserId) { return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "otherUserId not found" }) }
@@ -53,8 +54,8 @@ const getGroupChatController: RequestHandler = async (req, res, next) => {
                 { adminIds: userId },
             ],
         })
-        .select("-_id -__v")
-        .lean();
+            .select("-_id -__v")
+            .lean();
 
         if (!groupChat) {
             return res.status(StatusCodes.NOT_FOUND).json({
@@ -119,6 +120,73 @@ const deleteChatHistory: RequestHandler = async (req, res, next) => {
     }
 };
 
+const getGroupChatHistoryRoute: RequestHandler = async (req, res, next) => {
+    try {
+        logger.info("Getting list of users the user has chatted with...", { __filename });
+
+        const userId = new ObjectId((req as any).userId);
+
+        const result = await userChatReferenceModel.findOne({ userId }).lean();
+
+        if (!result || !result.groupIds?.length) {
+            logger.info(`No userChatReferenceModel found or no groupIds for userId: ${userId}`, { __filename });
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "No friends or chat history found for this user.",
+            });
+        }
+
+        const groupsList = await Promise.all(result.groupIds.map(id => {
+            logger.info(` userId: ${id}`, { __filename });
+            return UserModel.findById(id).lean()
+        }));
+
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            message: "User's chat list retrieved successfully.",
+            data: { groupIds: groupsList, result },
+        });
+
+    } catch (error) {
+        logger.error(`Exception occurred at getSingleUserChatHistoryRoute: ${JSON.stringify(error)}`, { __filename });
+        next(error);
+    }
+};
+
+
+const getSingleUserChatHistoryRoute: RequestHandler = async (req, res, next) => {
+    try {
+        logger.info("Getting list of users the user has chatted with...", { __filename });
+
+        const userId = new ObjectId((req as any).userId);
+
+        const result = await userChatReferenceModel.findOne({ userId }).lean();
+
+        if (!result || !result.friendsIds?.length) {
+            logger.info(`No userChatReferenceModel found or no friendsIds for userId: ${userId}`, { __filename });
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "No friends or chat history found for this user.",
+            });
+        }
+
+        const friendsList = await Promise.all(result.friendsIds.map(id => {
+            logger.info(` userId: ${id}`, { __filename });
+            return UserModel.findById(id).lean()
+        }));
+
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            message: "User's chat list retrieved successfully.",
+            data: { friendsIds: friendsList },
+        });
+
+    } catch (error) {
+        logger.error(`Exception occurred at getSingleUserChatHistoryRoute: ${JSON.stringify(error)}`, { __filename });
+        next(error);
+    }
+};
+
 
 
 const createGroupChatController: RequestHandler = async (req, res, next) => {
@@ -150,7 +218,11 @@ const setGroupImageController: RequestHandler = async (req, res, next) => {
     try {
         logger.info('image upload', { __filename });
 
-        const userId = (req as any).userId;
+        const userId = new ObjectId((req as any).userId);
+
+        let roomId: any = req?.query?.roomId
+        roomId = roomId ? new ObjectId(roomId) : null
+
         const image = req.file
             ? {
                 data: req.file.buffer.toString('base64'),
@@ -161,8 +233,22 @@ const setGroupImageController: RequestHandler = async (req, res, next) => {
         if (image) {
             await imageValidator.validateAsync(image);
         }
+        if (!roomId) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "roomId not found" });
+        }
 
-        await groupChatModel.findByIdAndUpdate(userId, { $set: { image } });
+        logger.info(`userId : ${userId}  roomId: ${roomId}`, { __filename })
+
+        const modelResult = await groupChatModel.findOneAndUpdate(
+            { _id: roomId, adminIds: userId },
+            { $set: { image } },
+            { new: true }
+        );
+
+        if (!modelResult) {
+            logger.warn(`No document found with roomId: ${roomId} and userId: ${userId}`, { __filename });
+            return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "Group not found or user unauthorized (not admin of this group)" });
+        }
 
         const message = image ? 'image uploaded' : 'image removed';
         return res.status(StatusCodes.CREATED).json({ success: true, message });
@@ -209,12 +295,50 @@ const getGroupChatsController: RequestHandler = async (req, res, next) => {
 };
 
 
+const deleteGroupChatController: RequestHandler = async (req, res, next) => {
+    try {
+        logger.info("getting group chats", { __filename });
+
+        const userId = new ObjectId((req as any).userId);
+        const roomId = req?.body?.roomId ? new ObjectId(req?.body?.roomId) : null;
+
+        if (!roomId) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "Please provide roomId." });
+        }
+
+        const groupChats = await groupChatModel
+            .findOneAndDelete({ roomId, adminIds: userId })
+
+            
+        if (groupChats) {
+            return res.status(StatusCodes.OK).json({
+                success: true,
+                message: "Group chats fetched successfully",
+                data: { groupMessages: groupChats.messages },
+            });
+        }
+
+        return res.status(StatusCodes.NOT_FOUND).json({
+            success: false,
+            message: "Group chat not found.",
+        });
+
+    } catch (error) {
+        logger.error(`Exception occurred at getGroupChatsController: ${JSON.stringify(error)}`, { __filename });
+        next(error);
+    }
+};
+
+
+
+
 //////////////////////////  
 
 export {
     getSingleUserChatController, getGroupChatController,
     deleteChatHistory, createGroupChatController, setGroupImageController,
-    getGroupChatsController
+    getGroupChatsController, getGroupChatHistoryRoute, getSingleUserChatHistoryRoute,
+    deleteGroupChatController
 };
 
 

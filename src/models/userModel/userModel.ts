@@ -7,4 +7,4 @@ const userSchema = new Schema<IUser>({
     image: { data: String, contentType: String }
 })
 
-export const UserModel = model<IUser>("user", userSchema, "users")
+export const UserModel = model<IUser>("users", userSchema, "users")

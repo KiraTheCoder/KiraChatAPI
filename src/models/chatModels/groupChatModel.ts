@@ -2,7 +2,6 @@ import { model, Schema, Types } from "mongoose";
 import { IgroupChat } from "@src/interfaces";
 
 const groupChatSchema = new Schema<IgroupChat>({
-    roomId: { type: Types.ObjectId, default: () => new Types.ObjectId(), required: true },
     userIds: [{ type: Types.ObjectId, ref: 'users' }],
     adminIds: [{ type: Types.ObjectId, ref: 'users' }],
     messages: [
