@@ -104,14 +104,14 @@ const deleteChatHistory: RequestHandler = async (req, res, next) => {
             logger.info(`No userChatReferenceModel found for userId: ${currentUserId}`, { __filename });
             return res.status(StatusCodes.NOT_FOUND).json({
                 success: false,
-                message: "User (friend or group) not found or chat history could not be deleted.",
+                message: "User (friend or group) chat not found.",
             });
         }
 
         logger.info(`Chat history updated for userId: ${currentUserId}, result: ${JSON.stringify(result)}`, { __filename });
         return res.status(StatusCodes.OK).json({
             success: true,
-            message: "Chat history deleted successfully, It's not deleted from DB.",
+            message: "Chat history deleted successfully userChatReferenceModel collection, It's not deleted chats.",
         });
 
     } catch (error) {
@@ -120,7 +120,7 @@ const deleteChatHistory: RequestHandler = async (req, res, next) => {
     }
 };
 
-const getGroupChatHistoryRoute: RequestHandler = async (req, res, next) => {
+const getGroupChatHistoryController: RequestHandler = async (req, res, next) => {
     try {
         logger.info("Getting list of users the user has chatted with...", { __filename });
 
@@ -148,13 +148,13 @@ const getGroupChatHistoryRoute: RequestHandler = async (req, res, next) => {
         });
 
     } catch (error) {
-        logger.error(`Exception occurred at getSingleUserChatHistoryRoute: ${JSON.stringify(error)}`, { __filename });
+        logger.error(`Exception occurred at getGroupChatHistoryController: ${JSON.stringify(error)}`, { __filename });
         next(error);
     }
 };
 
 
-const getSingleUserChatHistoryRoute: RequestHandler = async (req, res, next) => {
+const getSingleUserChatHistoryController: RequestHandler = async (req, res, next) => {
     try {
         logger.info("Getting list of users the user has chatted with...", { __filename });
 
@@ -272,7 +272,7 @@ const getGroupChatsController: RequestHandler = async (req, res, next) => {
         }
 
         const groupChats = await groupChatModel
-            .findOne({ roomId, $or: [{ userIds: userId }, { adminIds: userId }] })
+            .findOne({ _id: roomId, $or: [{ userIds: userId }, { adminIds: userId }] })
             .lean();
 
         if (groupChats) {
@@ -297,7 +297,7 @@ const getGroupChatsController: RequestHandler = async (req, res, next) => {
 
 const deleteGroupChatController: RequestHandler = async (req, res, next) => {
     try {
-        logger.info("getting group chats", { __filename });
+        logger.info("deleting group chats", { __filename });
 
         const userId = new ObjectId((req as any).userId);
         const roomId = req?.body?.roomId ? new ObjectId(req?.body?.roomId) : null;
@@ -307,14 +307,14 @@ const deleteGroupChatController: RequestHandler = async (req, res, next) => {
         }
 
         const groupChats = await groupChatModel
-            .findOneAndDelete({ roomId, adminIds: userId })
+            .findOneAndDelete({ _id: roomId, adminIds: userId })
 
-            
+        logger.info(`groupChats : ${JSON.stringify(groupChats)}`, { __filename })
+
         if (groupChats) {
             return res.status(StatusCodes.OK).json({
                 success: true,
-                message: "Group chats fetched successfully",
-                data: { groupMessages: groupChats.messages },
+                message: "Group chats deleted successfully",
             });
         }
 
@@ -324,12 +324,121 @@ const deleteGroupChatController: RequestHandler = async (req, res, next) => {
         });
 
     } catch (error) {
-        logger.error(`Exception occurred at getGroupChatsController: ${JSON.stringify(error)}`, { __filename });
+        logger.error(`Exception occurred at deleteGroupChatController: ${JSON.stringify(error)}`, { __filename });
         next(error);
     }
 };
 
 
+const addMemberInGroupController: RequestHandler = async (req, res, next) => {
+    try {
+        logger.info("adding user in group", { __filename });
+
+        const userId = new ObjectId((req as any).userId);
+        const roomId = req?.body?.roomId ? new ObjectId(req?.body?.roomId) : null;
+        let otherUserId = req?.body?.otherUserId
+
+        if (!roomId || !otherUserId) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Please provide roomId and otherUserId"
+            });
+        }
+
+        const groupData = await groupChatModel.findOne({ _id: roomId, adminIds: userId });
+
+        if (!groupData) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Group not found or user is not an admin."
+            });
+        }
+
+        // Check if the user is already in the group
+        if (groupData.userIds.includes(otherUserId)) {
+            return res.status(StatusCodes.CONFLICT).json({
+                success: false,
+                message: "User is already a member of the group."
+            });
+        }
+
+        // Add the user to the group
+        otherUserId = otherUserId ? new ObjectId(req?.body?.otherUserId) : null;
+
+        // const updatedGroupData =
+         await groupChatModel.findOneAndUpdate(
+            { _id: roomId, adminIds: userId },
+            { $addToSet: { userIds: otherUserId } },
+            { new: true }
+        );
+
+        // logger.info(`updatedGroupData: ${JSON.stringify(updatedGroupData)}`, { __filename });
+
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            message: `User added to the group successfully.`,
+        });
+
+    } catch (error) {
+        logger.error(`Exception occurred at addMemberInGroupController: ${JSON.stringify(error)}`, { __filename });
+        next(error);
+    }
+};
+
+
+const removeMemberInGroupController: RequestHandler = async (req, res, next) => {
+    try {
+        logger.info("deleting user in group", { __filename });
+
+        const userId = new ObjectId((req as any).userId);
+        const roomId = req?.body?.roomId ? new ObjectId(req?.body?.roomId) : null;
+        let otherUserId = req?.body?.otherUserId
+
+        if (!roomId || !otherUserId) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Please provide roomId and otherUserId"
+            });
+        }
+
+        const groupData = await groupChatModel.findOne({ _id: roomId, adminIds: userId });
+
+        if (!groupData) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Group not found or user is not an admin."
+            });
+        }
+
+        // Check if the user is already in the group
+        if (!groupData.userIds.includes(otherUserId)) {
+            return res.status(StatusCodes.CONFLICT).json({
+                success: false,
+                message: "User not a member of the group."
+            });
+        }
+
+        // Add the user to the group
+        otherUserId = otherUserId ? new ObjectId(req?.body?.otherUserId) : null;
+
+        await groupChatModel.findOneAndUpdate(
+            { _id: roomId, adminIds: userId },
+            { $pull: { userIds: otherUserId } },
+            { new: true }
+        );
+
+        // logger.info(`updatedGroupData: ${JSON.stringify(updatedGroupData)}`, { __filename });
+
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            message: `User deleted from the group successfully.`,
+        });
+
+    } catch (error) {
+        logger.error(`Exception occurred at removeMemberInGroupController: ${JSON.stringify(error)}`, { __filename });
+        next(error);
+    }
+};
 
 
 //////////////////////////  
@@ -337,8 +446,8 @@ const deleteGroupChatController: RequestHandler = async (req, res, next) => {
 export {
     getSingleUserChatController, getGroupChatController,
     deleteChatHistory, createGroupChatController, setGroupImageController,
-    getGroupChatsController, getGroupChatHistoryRoute, getSingleUserChatHistoryRoute,
-    deleteGroupChatController
+    getGroupChatsController, getGroupChatHistoryController, getSingleUserChatHistoryController,
+    deleteGroupChatController, addMemberInGroupController, removeMemberInGroupController
 };
 
 

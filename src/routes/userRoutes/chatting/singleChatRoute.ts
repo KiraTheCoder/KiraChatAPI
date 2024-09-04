@@ -1,12 +1,12 @@
 import { Router } from "express";
 import {
-    getSingleUserChatHistoryRoute, getSingleUserChatController
+    getSingleUserChatHistoryController, getSingleUserChatController
 } from "@src/controllers"
 
 const router = Router()
 
 router.route("/list")
-    .get(getSingleUserChatHistoryRoute)
+    .get(getSingleUserChatHistoryController)
 
 router.route("/data")
     .get(getSingleUserChatController)
