@@ -28,12 +28,13 @@ export const ServerApp = (app: Application, PORT: number | string) => {
     const server = http.createServer(app)
     const io = new Server(server, {
       cors: {
-        origin: "*",
+        origin: ["*", "http://localhost:4200"],
         methods: ["GET", "POST"],
       },
       connectionStateRecovery: {},
       adapter: createAdapter()
     });
+    
 
     io.use((socket, next) => {
       const token = socket.handshake.auth.token;
