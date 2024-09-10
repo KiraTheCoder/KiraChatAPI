@@ -2,6 +2,7 @@ import { model, Schema, Types } from "mongoose";
 import { IsingleUserChat } from "@src/interfaces";
 
 const singleUserChatSchema = new Schema<IsingleUserChat>({
+    _id:false,
     chatId: {
         type: [{ type: Types.ObjectId, ref: 'users', required: true }],
         required: true,
