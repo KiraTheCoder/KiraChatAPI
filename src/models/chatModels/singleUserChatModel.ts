@@ -3,7 +3,7 @@ import { IsingleUserChat } from "@src/interfaces";
 
 const singleUserChatSchema = new Schema<IsingleUserChat>({
     chatId: {
-        type: [{ type: Types.ObjectId, ref: 'users', required: true, unique: true }],
+        type: [{ type: Types.ObjectId, ref: 'users', required: true }],
         required: true,
         validate: {
             validator: (v: Types.ObjectId[]) => Array.isArray(v) && v.length === 2,
