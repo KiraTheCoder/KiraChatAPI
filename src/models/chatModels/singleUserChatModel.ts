@@ -12,6 +12,7 @@ const singleUserChatSchema = new Schema<IsingleUserChat>({
     },
     messages: [
         {
+            _id: false,
             userId: { type: Types.ObjectId, ref: 'users', required: true },
             message: { type: String, required: true },
             createdAt: { type: String }
