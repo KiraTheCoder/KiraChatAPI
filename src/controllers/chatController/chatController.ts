@@ -24,9 +24,9 @@ const getSingleUserChatController: RequestHandler = async (req: Request, res: Re
         const userChat: any = await singleUserChatModel.findOne({ chatId: { $all: [otherUserId, userID] } }).select({ "_id": 0, "__v": 0, }).lean()
 
         if (!userChat) {
-            res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "user chat not found" })
+          return  res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "user chat not found" })
         }
-        res.status(StatusCodes.ACCEPTED).json({ success: true, message: "user Chat fetched successfully", data: { messages: userChat?.messages } })
+      return  res.status(StatusCodes.ACCEPTED).json({ success: true, message: "user Chat fetched successfully", data: { messages: userChat?.messages } })
     } catch (error) {
         logger.error(`exception occurred at singleUserChatGetController : ${JSON.stringify(error)}`, { __filename });
         next(error)
